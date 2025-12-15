@@ -1,252 +1,184 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Matching Game – Vocabulary</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matching Game – Vocabulary</title>
 
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2563eb">
-  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
 
-  <style>
-    :root{
-      --bg:#f6f8fb;
-      --card:#ffffff;
-      --accent:#2563eb;
-      --correct:#16a34a;
-      --wrong:#dc2626;
-    }
+<style>
+:root{
+  --accent:#2563eb;
+  --active:#fde047;
+  --correct:#16a34a;
+  --wrong:#dc2626;
+}
 
-    *{box-sizing:border-box}
+*{box-sizing:border-box}
 
-    body{
-      margin:0;
-      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background:var(--bg);
-      padding:16px;
-    }
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#f6f8fb;
+  padding:16px;
+}
 
-    .container{
-      max-width:1500px;
-      margin:auto;
-      background:var(--card);
-      padding:16px;
-      border-radius:14px;
-      box-shadow:0 6px 24px rgba(0,0,0,.06);
-    }
+.container{
+  max-width:1500px;
+  margin:auto;
+  background:white;
+  padding:16px;
+  border-radius:14px;
+}
 
-    h1{
-      font-size:1.2rem;
-      margin:0 0 12px;
-    }
+.matching-area{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:16px;
+}
 
-    .matching-area{
-      display:grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap:16px;
-      margin-top:16px;
-    }
+.images,.words{display:contents}
 
-    .images, .words{
-      display: contents;
-    }
+.match-card{
+  border:2px dashed #c7d2fe;
+  border-radius:12px;
+  min-height:140px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-    .match-card{
-      border:2px dashed #c7d2fe;
-      border-radius:12px;
-      padding:10px;
-      background:#f8fafc;
-      min-height:140px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-    }
+.match-card.correct{background:#ecfdf5;border-color:var(--correct)}
+.match-card.wrong{background:#fef2f2;border-color:var(--wrong)}
 
-    .match-card img{
-      max-width:100%;
-      max-height:120px;
-      object-fit:contain;
-    }
+.match-card img{
+  max-width:100%;
+  max-height:120px;
+}
 
-    .match-card.correct{
-      border-color:var(--correct);
-      background:#ecfdf5;
-    }
+.word{
+  padding:14px;
+  background:#eef2ff;
+  border-radius:10px;
+  font-weight:600;
+  text-align:center;
+  touch-action:none;
+  user-select:none;
+  transition:.2s;
+}
 
-    .match-card.wrong{
-      border-color:var(--wrong);
-      background:#fef2f2;
-    }
+.word.active{
+  background:var(--active);
+  transform:scale(1.05);
+}
 
-    .word{
-      padding:14px;
-      background:#eef2ff;
-      border-radius:10px;
-      text-align:center;
-      font-weight:600;
-      cursor:grab;
-      user-select:none;
-      touch-action:none;
-    }
+.word.locked{
+  background:#dcfce7;
+  cursor:default;
+}
 
-    @media (max-width: 768px){
-      .matching-area{
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .controls{
-      margin-top:16px;
-      display:flex;
-      gap:10px;
-    }
-
-    button{
-      flex:1;
-      padding:12px;
-      border-radius:10px;
-      border:0;
-      background:var(--accent);
-      color:white;
-      font-size:1rem;
-      cursor:pointer;
-    }
-
-    #installBtn{
-      display:none;
-      background:#16a34a;
-    }
-  </style>
+@media(max-width:768px){
+  .matching-area{grid-template-columns:repeat(2,1fr)}
+}
+</style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>🧩 Nối hình với từ đúng</h1>
+<div class="container">
+  <h2>🧩 Nối hình với từ đúng</h2>
 
-    <section class="matching-area">
-      <div class="images" id="imageList"></div>
-      <div class="words" id="wordList"></div>
-    </section>
+  <section class="matching-area">
+    <div class="images" id="imageList"></div>
+    <div class="words" id="wordList"></div>
+  </section>
 
-    <div class="controls">
-      <button onclick="resetGame()">Làm lại</button>
-      <button id="installBtn">📲 Cài app</button>
-    </div>
-  </div>
+  <button onclick="resetGame()" style="margin-top:16px;width:100%">Làm lại</button>
+</div>
 
-  <audio id="soundCorrect" src="correctsound.mp3" preload="auto"></audio>
-  <audio id="soundWrong" src="error sound.mp3" preload="auto"></audio>
+<audio id="soundCorrect" src="correctsound.mp3"></audio>
+<audio id="soundWrong" src="error sound.mp3"></audio>
 
-  <script>
-    const MATCH_DATA = [
-      { word: "happy", image: "Flashcards/IM15.png" },
-      { word: "sad", image: "Flashcards/IM16.png" },
-      { word: "hungry", image: "Flashcards/IM17.png" },
-      { word: "thirsty", image: "Flashcards/IM18.png" },
-      { word: "hot", image: "Flashcards/IM19.png" },
-      { word: "cold", image: "Flashcards/IM20.png" },
-      { word: "dress", image: "Flashcards/IM21.png" },
-      { word: "socks", image: "Flashcards/IM22.png" },
-      { word: "T-shirt", image: "Flashcards/IM23.png" },
-      { word: "pants", image: "Flashcards/IM24.png" },
-      { word: "shorts", image: "Flashcards/IM25.png" },
-      { word: "shoes", image: "Flashcards/IM26.png" },
-      { word: "plus", image: "Flashcards/IM27.png" },
-      { word: "equals", image: "Flashcards/IM28.png" },
-      { word: "addition problem", image: "Flashcards/IM29.png" },
-      { word: "bus", image: "Flashcards/IM30.png" },
-      { word: "bike", image: "Flashcards/IM31.png" },
-      { word: "boat", image: "Flashcards/IM32.png" }
-    ];
+<script>
+const DATA = [
+ {word:"happy",image:"Flashcards/IM15.png"},
+ {word:"sad",image:"Flashcards/IM16.png"},
+ {word:"hungry",image:"Flashcards/IM17.png"},
+ {word:"thirsty",image:"Flashcards/IM18.png"},
+ {word:"hot",image:"Flashcards/IM19.png"},
+ {word:"cold",image:"Flashcards/IM20.png"}
+];
 
-    const imageList = document.getElementById("imageList");
-    const wordList = document.getElementById("wordList");
-    const soundCorrect = document.getElementById("soundCorrect");
-    const soundWrong = document.getElementById("soundWrong");
+const imageList=document.getElementById("imageList");
+const wordList=document.getElementById("wordList");
+const sOK=document.getElementById("soundCorrect");
+const sNO=document.getElementById("soundWrong");
 
-    let draggedWord = null;
+let activeWord=null;
 
-    function playSound(audio){
-      audio.currentTime = 0;
-      audio.play();
-    }
+const shuffle=a=>a.sort(()=>Math.random()-.5);
 
-    function shuffle(arr){
-      return arr.sort(() => Math.random() - 0.5);
-    }
+function renderGame(){
+  imageList.innerHTML="";
+  wordList.innerHTML="";
 
-    function renderGame(){
-      imageList.innerHTML = "";
-      wordList.innerHTML = "";
+  shuffle([...DATA]).forEach(i=>{
+    const c=document.createElement("div");
+    c.className="match-card";
+    c.dataset.answer=i.word;
+    c.innerHTML=`<img src="${i.image}">`;
+    imageList.appendChild(c);
+  });
 
-      shuffle([...MATCH_DATA]).forEach(item=>{
-        const card = document.createElement("div");
-        card.className = "match-card";
-        card.dataset.answer = item.word;
-        card.innerHTML = `<img src="${item.image}">`;
-        imageList.appendChild(card);
-      });
+  shuffle([...DATA]).forEach(i=>{
+    const w=document.createElement("div");
+    w.className="word";
+    w.textContent=i.word;
 
-      shuffle([...MATCH_DATA]).forEach(item=>{
-        const word = document.createElement("div");
-        word.className = "word";
-        word.textContent = item.word;
-        word.draggable = true;
-
-        word.addEventListener("dragstart", ()=> draggedWord = word);
-        word.addEventListener("pointerdown", ()=> draggedWord = word);
-
-        wordList.appendChild(word);
-      });
-
-      document.querySelectorAll(".match-card").forEach(card=>{
-        card.addEventListener("dragover", e=>e.preventDefault());
-        card.addEventListener("drop", ()=>checkMatch(card));
-        card.addEventListener("pointerup", ()=>checkMatch(card));
-      });
-    }
-
-    function checkMatch(card){
-      if(!draggedWord) return;
-      const correct = card.dataset.answer === draggedWord.textContent;
-      card.classList.add(correct ? "correct" : "wrong");
-      playSound(correct ? soundCorrect : soundWrong);
-      if(correct){
-        card.appendChild(draggedWord);
-        draggedWord.draggable = false;
-      }
-      draggedWord = null;
-    }
-
-    function resetGame(){
-      renderGame();
-    }
-
-    renderGame();
-
-    /* ===== Service Worker ===== */
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("service-worker.js");
-    }
-
-    /* ===== Install App ===== */
-    let deferredPrompt;
-    const installBtn = document.getElementById("installBtn");
-
-    window.addEventListener("beforeinstallprompt", e => {
-      e.preventDefault();
-      deferredPrompt = e;
-      installBtn.style.display = "block";
+    w.addEventListener("pointerdown",e=>{
+      if(w.classList.contains("locked")) return;
+      document.querySelectorAll(".word").forEach(x=>x.classList.remove("active"));
+      activeWord=w;
+      w.classList.add("active");
+      w.setPointerCapture(e.pointerId);
     });
 
-    installBtn.addEventListener("click", () => {
-      deferredPrompt.prompt();
-      installBtn.style.display = "none";
-    });
-  </script>
+    wordList.appendChild(w);
+  });
+
+  document.querySelectorAll(".match-card").forEach(card=>{
+    card.addEventListener("pointerup",()=>check(card));
+  });
+}
+
+function check(card){
+  if(!activeWord) return;
+
+  const correct=card.dataset.answer===activeWord.textContent;
+
+  card.classList.remove("wrong","correct");
+  card.classList.add(correct?"correct":"wrong");
+
+  if(correct){
+    sOK.play();
+    card.appendChild(activeWord);
+    activeWord.classList.remove("active");
+    activeWord.classList.add("locked");
+  }else{
+    sNO.play();
+    activeWord.classList.remove("active");
+  }
+
+  activeWord=null;
+}
+
+function resetGame(){
+  renderGame();
+}
+
+renderGame();
+</script>
 </body>
 </html>
+
